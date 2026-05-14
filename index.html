@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GRAB — I tuoi file dal Mac, sempre.</title>
+  <meta name="description" content="Chiedi in linguaggio naturale. Il Mac trova. Tu grabbi. Trasferimento P2P cifrato, zero cloud."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --teal-900: #020b14;
+      --teal-800: #030e1c;
+      --teal-700: #061828;
+      --teal-600: #0a3a50;
+      --teal-500: #0a5a72;
+      --teal-400: #0a8aaa;
+      --teal-300: #1ab0d8;
+      --teal-200: #50d0f0;
+      --teal-100: #a8eef8;
+      --white:    rgba(255,255,255,1);
+      --white-90: rgba(255,255,255,.9);
+      --white-60: rgba(255,255,255,.6);
+      --white-30: rgba(255,255,255,.3);
+      --white-10: rgba(255,255,255,.1);
+      --white-06: rgba(255,255,255,.06);
+      --glass-bg:     rgba(255,255,255,.07);
+      --glass-border: rgba(255,255,255,.14);
+      --glass-shine:  rgba(255,255,255,.12);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--teal-900);
+      color: var(--white-90);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ── NOISE TEXTURE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      opacity: .025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px;
+    }
+
+    /* ── AMBIENT GRADIENT BG ── */
+    .ambient {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse at 20% 10%, rgba(10,100,140,.25) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 80%, rgba(8,70,110,.2) 0%, transparent 50%),
+        radial-gradient(ellipse at 55% 45%, rgba(5,30,50,.3) 0%, transparent 60%);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px; height: 64px;
+      background: rgba(2,11,20,.7);
+      backdrop-filter: blur(24px);
+      border-bottom: 0.5px solid var(--glass-border);
+    }
+    .nav-logo {
+      font-size: 18px; font-weight: 600; color: var(--white-90);
+      letter-spacing: -.4px; display: flex; align-items: center; gap: 10px;
+      text-decoration: none;
+    }
+    .nav-logo-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--glass-bg);
+      border: 0.5px solid var(--glass-border);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nav-links { display: flex; gap: 32px; align-items: center; }
+    .nav-links a {
+      font-size: 14px; color: var(--white-60); text-decoration: none;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--white-90); }
+    .nav-cta {
+      font-size: 13px; font-weight: 500; color: var(--teal-200) !important;
+      padding: 7px 16px;
+      border: 0.5px solid rgba(80,208,240,.3);
+      border-radius: 20px;
+      background: rgba(10,74,94,.3);
+      backdrop-filter: blur(10px);
+      transition: all .2s !important;
+    }
+    .nav-cta:hover {
+      background: rgba(10,74,94,.5) !important;
+      border-color: rgba(80,208,240,.5) !important;
+    }
+
+    /* ── SECTIONS ── */
+    section { position: relative; z-index: 1; }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 120px 24px 80px;
+      text-align: center;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px; color: var(--teal-200);
+      letter-spacing: .12em; text-transform: uppercase;
+      padding: 5px 14px;
+      background: rgba(10,100,140,.15);
+      border: 0.5px solid rgba(80,208,240,.2);
+      border-radius: 20px;
+      margin-bottom: 28px;
+      animation: fadeUp .8s ease both;
+    }
+    .eyebrow-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--teal-200);
+      box-shadow: 0 0 8px rgba(80,208,240,.6);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    .hero h1 {
+      font-size: clamp(48px, 7vw, 96px);
+      font-weight: 300;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      color: var(--white-90);
+      max-width: 800px;
+      margin-bottom: 8px;
+      animation: fadeUp .8s .1s ease both;
+    }
+    .hero h1 strong {
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--teal-100), var(--teal-300));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: clamp(16px, 2vw, 20px);
+      color: var(--white-60);
+      max-width: 520px;
+      margin: 0 auto 48px;
+      font-weight: 300;
+      animation: fadeUp .8s .2s ease both;
+    }
+
+    .hero-actions {
+      display: flex; gap: 12px; align-items: center; justify-content: center;
+      margin-bottom: 80px;
+      animation: fadeUp .8s .3s ease both;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 28px; border-radius: 14px;
+      font-size: 15px; font-weight: 500; color: var(--white-90);
+      background: rgba(10,74,94,.7);
+      border: 0.5px solid rgba(80,208,240,.4);
+      backdrop-filter: blur(20px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.15), 0 8px 32px rgba(10,100,140,.3);
+      text-decoration: none; cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-primary:hover {
+      background: rgba(10,100,130,.7);
+      border-color: rgba(80,208,240,.6);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 8px 40px rgba(10,100,140,.45);
+      transform: translateY(-1px);
+    }
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 24px; border-radius: 14px;
+      font-size: 15px; font-weight: 400; color: var(--white-60);
+      background: transparent; border: none;
+      text-decoration: none; cursor: pointer;
+      transition: color .2s;
+    }
+    .btn-ghost:hover { color: var(--white-90); }
+
+    /* ── PHONE MOCKUP ── */
+    .hero-phone-wrap {
+      position: relative;
+      animation: fadeUp .8s .4s ease both;
+    }
+    .hero-phone-glow {
+      position: absolute; inset: -60px;
+      background: radial-gradient(ellipse, rgba(10,130,170,.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .phone-frame {
+      width: 260px; height: 560px;
+      border-radius: 52px;
+      background: #040e1a;
+      border: 1.5px solid rgba(255,255,255,.18);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.9),
+        0 40px 100px rgba(0,0,0,.6),
+        inset 0 1.5px 0 rgba(255,255,255,.12);
+      position: relative; overflow: hidden;
+    }
+    .phone-wallpaper {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse at 30% 20%, rgba(10,100,140,.55) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 75%, rgba(8,70,110,.4) 0%, transparent 50%),
+        linear-gradient(170deg, #040e1a 0%, #060f1e 100%);
+    }
+    .phone-di {
+      position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+      width: 88px; height: 17px; background: #000; border-radius: 20px; z-index: 20;
+    }
+    .phone-sb {
+      position: absolute; top: 0; left: 0; right: 0; height: 50px;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      padding: 0 24px 8px; z-index: 15;
+    }
+    .phone-time { font-size: 14px; font-weight: 600; color: rgba(255,255,255,.9); letter-spacing: -.2px; }
+    .phone-chat {
+      position: absolute; top: 50px; left: 0; right: 0; bottom: 80px;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 12px 16px 8px; gap: 10px; z-index: 10;
+    }
+    .pdate { align-self: center; font-size: 10px; color: rgba(255,255,255,.25); letter-spacing: .04em; margin-bottom: 2px; }
+    .pbrow { display: flex; flex-direction: column; }
+    .pbrow.u { align-items: flex-end; }
+    .pbrow.m { align-items: flex-start; }
+    .psender { font-size: 9px; color: rgba(80,200,230,.5); margin-bottom: 3px; padding-left: 3px; }
+    .pbu {
+      max-width: 80%; padding: 10px 14px; font-size: 11px; line-height: 1.4;
+      color: rgba(255,255,255,.94); border-radius: 20px 20px 5px 20px;
+      background: rgba(10,74,94,.55); border: 0.5px solid rgba(80,200,230,.3);
+      backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 rgba(255,255,255,.14);
+    }
+    .pbm {
+      max-width: 80%; padding: 10px 14px; font-size: 11px; line-height: 1.4;
+      color: rgba(255,255,255,.78); border-radius: 20px 20px 20px 5px;
+      background: rgba(255,255,255,.07); border: 0.5px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 rgba(255,255,255,.1);
+    }
+    .pfcard {
+      width: 100%; border-radius: 20px; overflow: hidden; margin-top: 4px;
+      background: rgba(255,255,255,.08); backdrop-filter: blur(40px);
+      border: 0.5px solid rgba(255,255,255,.16);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+    }
+    .pfprev {
+      height: 70px; background: rgba(255,255,255,.04);
+      border-bottom: 0.5px solid rgba(255,255,255,.07);
+      display: flex; align-items: center; padding: 0 14px; gap: 12px; position: relative;
+    }
+    .pfprev::before { content:''; position:absolute; inset:0; background: linear-gradient(135deg,rgba(10,74,94,.18),rgba(8,55,75,.1)); }
+    .pflines { flex:1; display:flex; flex-direction:column; gap:6px; z-index:1; }
+    .pfl { height: 4px; border-radius: 2px; background: rgba(255,255,255,.1); }
+    .pflh { height: 5.5px; background: rgba(255,255,255,.2); }
+    .pfbadge {
+      z-index:1; flex-shrink:0; padding: 5px 9px;
+      background: rgba(10,74,94,.6); border: 0.5px solid rgba(80,200,230,.35);
+      border-radius: 9px; font-size: 9px; font-weight: 700; color: rgba(255,255,255,.95);
+      backdrop-filter: blur(10px); box-shadow: inset 0 1px 0 rgba(255,255,255,.2);
+    }
+    .pfbody { padding: 10px 14px 5px; }
+    .pfname { font-size: 11.5px; font-weight: 500; color: rgba(255,255,255,.9); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pfmeta { font-size: 9.5px; color: rgba(255,255,255,.3); display: flex; gap: 6px; }
+    .pfactions { padding: 8px 14px 12px; display: flex; gap: 8px; }
+    .pgrab {
+      flex:1; height: 36px; background: rgba(10,74,94,.65);
+      border: 0.5px solid rgba(80,200,230,.4); border-radius: 12px;
+      backdrop-filter: blur(20px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 4px 16px rgba(10,74,94,.35);
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      font-size: 11px; font-weight: 600; color: rgba(255,255,255,.97);
+    }
+    .peye {
+      width: 36px; height: 36px; border-radius: 12px;
+      background: rgba(255,255,255,.07); border: 0.5px solid rgba(255,255,255,.14);
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+    }
+    .pibar {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 80px;
+      background: rgba(4,14,24,.6); backdrop-filter: blur(40px);
+      border-top: 0.5px solid rgba(255,255,255,.08);
+      display: flex; align-items: center; padding: 0 16px 12px; gap: 10px; z-index: 20;
+    }
+    .pipill {
+      flex: 1; height: 40px; border-radius: 20px;
+      background: rgba(255,255,255,.07); border: 0.5px solid rgba(255,255,255,.13);
+      backdrop-filter: blur(20px); box-shadow: inset 0 1px 0 rgba(255,255,255,.1);
+      display: flex; align-items: center; padding: 0 16px;
+      font-size: 11px; color: rgba(255,255,255,.22);
+    }
+    .psbtn {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(10,74,94,.7); border: 0.5px solid rgba(80,200,230,.4);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 4px 14px rgba(10,74,94,.4);
+    }
+
+    /* floating wave decoration */
+    .wave-deco {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      width: 600px; pointer-events: none; opacity: .35;
+    }
+
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(24px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    @keyframes floatY {
+      0%,100% { transform: translateY(0px); }
+      50%      { transform: translateY(-12px); }
+    }
+    .phone-frame { animation: floatY 6s ease-in-out infinite; }
+
+    /* ── DIVIDER ── */
+    .section-divider {
+      width: 1px; height: 80px; margin: 0 auto;
+      background: linear-gradient(to bottom, transparent, var(--glass-border), transparent);
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how { padding: 100px 24px; }
+    .how-inner { max-width: 900px; margin: 0 auto; }
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px; color: var(--teal-300); letter-spacing: .12em; text-transform: uppercase;
+      margin-bottom: 16px; display: block;
+    }
+    .section-title {
+      font-size: clamp(32px, 4vw, 52px); font-weight: 300; letter-spacing: -1.5px;
+      color: var(--white-90); margin-bottom: 64px; line-height: 1.1;
+    }
+    .section-title strong { font-weight: 600; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .step {
+      background: var(--glass-bg); backdrop-filter: blur(24px);
+      border: 0.5px solid var(--glass-border); border-radius: 24px;
+      padding: 32px 28px;
+      box-shadow: inset 0 1px 0 var(--glass-shine);
+      transition: border-color .2s, background .2s;
+    }
+    .step:hover {
+      border-color: rgba(80,208,240,.25);
+      background: rgba(255,255,255,.09);
+    }
+    .step-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px; color: var(--teal-300); letter-spacing: .1em;
+      margin-bottom: 20px; display: block;
+    }
+    .step-icon {
+      width: 52px; height: 52px; border-radius: 14px; margin-bottom: 20px;
+      background: rgba(10,74,94,.45); border: 0.5px solid rgba(80,200,230,.25);
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+    }
+    .step h3 { font-size: 20px; font-weight: 500; color: var(--white-90); margin-bottom: 10px; letter-spacing: -.3px; }
+    .step p  { font-size: 15px; color: var(--white-60); line-height: 1.6; font-weight: 300; }
+
+    /* ── FEATURES ── */
+    .features { padding: 80px 24px 100px; }
+    .features-inner { max-width: 900px; margin: 0 auto; }
+    .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .feat {
+      background: var(--glass-bg); backdrop-filter: blur(24px);
+      border: 0.5px solid var(--glass-border); border-radius: 20px;
+      padding: 28px; display: flex; gap: 18px; align-items: flex-start;
+      box-shadow: inset 0 1px 0 var(--glass-shine);
+      transition: border-color .2s;
+    }
+    .feat:hover { border-color: rgba(80,208,240,.2); }
+    .feat-icon {
+      width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+      background: rgba(10,74,94,.45); border: 0.5px solid rgba(80,200,230,.22);
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .feat-t h4 { font-size: 16px; font-weight: 500; color: var(--white-90); margin-bottom: 6px; letter-spacing: -.2px; }
+    .feat-t p  { font-size: 14px; color: var(--white-60); line-height: 1.6; font-weight: 300; }
+
+    /* ── TECH BADGE ROW ── */
+    .tech-row {
+      display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+      padding: 40px 24px;
+    }
+    .tech-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px; color: var(--teal-200); letter-spacing: .06em;
+      padding: 6px 14px; border-radius: 20px;
+      background: rgba(10,74,94,.2); border: 0.5px solid rgba(80,200,230,.18);
+    }
+
+    /* ── PRIVACY CALLOUT ── */
+    .privacy { padding: 60px 24px; }
+    .privacy-inner {
+      max-width: 680px; margin: 0 auto; text-align: center;
+      background: rgba(10,74,94,.15); backdrop-filter: blur(24px);
+      border: 0.5px solid rgba(80,200,230,.2); border-radius: 28px;
+      padding: 56px 48px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 0 80px rgba(10,100,140,.1);
+    }
+    .privacy-icon { font-size: 40px; margin-bottom: 20px; display: block; }
+    .privacy h2 {
+      font-size: clamp(28px, 4vw, 42px); font-weight: 300; letter-spacing: -1px;
+      color: var(--white-90); margin-bottom: 16px; line-height: 1.15;
+    }
+    .privacy h2 strong { font-weight: 600; }
+    .privacy p { font-size: 17px; color: var(--white-60); line-height: 1.7; font-weight: 300; }
+
+    /* ── CTA FOOTER ── */
+    .cta-section { padding: 100px 24px 60px; text-align: center; }
+    .cta-inner { max-width: 560px; margin: 0 auto; }
+    .cta-section h2 {
+      font-size: clamp(36px, 5vw, 60px); font-weight: 300; letter-spacing: -1.5px;
+      color: var(--white-90); margin-bottom: 16px; line-height: 1.1;
+    }
+    .cta-section h2 strong { font-weight: 600; }
+    .cta-section p { font-size: 17px; color: var(--white-60); margin-bottom: 36px; font-weight: 300; }
+
+    .coming-soon {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 16px 32px; border-radius: 16px;
+      font-size: 16px; font-weight: 500; color: var(--white-60);
+      background: var(--glass-bg); border: 0.5px solid var(--glass-border);
+      backdrop-filter: blur(20px);
+    }
+    .coming-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--teal-300); box-shadow: 0 0 10px rgba(80,208,240,.5);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 40px 48px; border-top: 0.5px solid var(--glass-border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 13px; color: var(--white-30);
+    }
+    footer a { color: var(--white-30); text-decoration: none; transition: color .2s; }
+    footer a:hover { color: var(--white-60); }
+
+    /* ── SCROLL REVEAL ── */
+    .reveal {
+      opacity: 0; transform: translateY(32px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      .steps { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .privacy-inner { padding: 40px 28px; }
+      footer { flex-direction: column; gap: 12px; text-align: center; }
+      .phone-frame { width: 220px; height: 476px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="ambient"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-icon">
+      <svg width="18" height="18" viewBox="0 0 200 200" fill="none">
+        <path d="M155 48C140 62 122 73 108 84C94 95 82 106 68 120C57 131 48 140 36 156" stroke="rgba(80,208,240,.8)" stroke-width="14" stroke-linecap="round"/>
+        <rect x="108" y="26" width="66" height="44" rx="5" fill="rgba(26,176,216,.85)"/>
+        <rect x="111" y="29" width="60" height="37" rx="3" fill="#040e1a"/>
+        <rect x="106" y="70" width="70" height="4" rx="2" fill="rgba(26,176,216,.7)"/>
+        <rect x="26" y="100" width="42" height="70" rx="9" fill="rgba(10,160,200,.85)"/>
+        <rect x="29" y="107" width="36" height="56" rx="5" fill="#040e1a"/>
+      </svg>
+    </div>
+    GRAB
+  </a>
+  <div class="nav-links">
+    <a href="#come-funziona">Come funziona</a>
+    <a href="#features">Features</a>
+    <a href="#privacy">Privacy</a>
+    <a href="#" class="nav-cta">App Store →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">
+    <span class="eyebrow-dot"></span>
+    P2P · Cifrato · Zero cloud
+  </div>
+
+  <h1>I tuoi file dal Mac,<br/><strong>sempre a portata.</strong></h1>
+  <p class="hero-sub">Scrivi cosa cerchi in linguaggio naturale. GRAB interroga il tuo Mac, trova il file, te lo porta direttamente sull'iPhone — senza server, senza cloud.</p>
+
+  <div class="hero-actions">
+    <a href="#" class="btn-primary">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v9M4 8l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><line x1="2" y1="14" x2="14" y2="14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      Scarica su App Store
+    </a>
+    <a href="#come-funziona" class="btn-ghost">Come funziona →</a>
+  </div>
+
+  <!-- Phone mockup -->
+  <div class="hero-phone-wrap">
+    <div class="hero-phone-glow"></div>
+    <div class="phone-frame">
+      <div class="phone-wallpaper"></div>
+      <div class="phone-di"></div>
+      <div class="phone-sb">
+        <span class="phone-time">9:41</span>
+        <svg width="52" height="12" viewBox="0 0 52 12" fill="none">
+          <rect x="0" y="4" width="3" height="8" rx="1" fill="white" opacity=".4"/>
+          <rect x="5" y="2.5" width="3" height="9.5" rx="1" fill="white" opacity=".65"/>
+          <rect x="10" y="0" width="3" height="12" rx="1" fill="white" opacity=".9"/>
+          <rect x="15" y="0" width="1.5" height="12" rx=".75" fill="white"/>
+          <path d="M22 3C24.8 3 27.2 4.2 28.8 6.1L29.5 5.3C27.6 3.1 24.9 1.8 22 1.8C19.1 1.8 16.4 3.1 14.5 5.3L15.2 6.1C16.8 4.2 19.2 3 22 3Z" fill="white" opacity=".4"/>
+          <path d="M22 5.5C24 5.5 25.8 6.4 27 7.8L27.8 7C26.4 5.4 24.3 4.4 22 4.4C19.7 4.4 17.6 5.4 16.2 7L17 7.8C18.2 6.4 20 5.5 22 5.5Z" fill="white" opacity=".7"/>
+          <circle cx="22" cy="10.5" r="1.5" fill="white"/>
+          <rect x="29" y="1" width="22" height="10" rx="2.5" stroke="white" stroke-width="1" opacity=".5"/>
+          <rect x="30.5" y="2.5" width="15" height="7" rx="1.5" fill="white"/>
+          <path d="M52 4.5C52.8 4.5 53.5 5.2 53.5 6C53.5 6.8 52.8 7.5 52 7.5" stroke="white" stroke-width="1" stroke-linecap="round" opacity=".5"/>
+        </svg>
+      </div>
+
+      <div class="phone-chat">
+        <div class="pdate">Oggi</div>
+        <div class="pbrow u">
+          <div class="pbu">Dammi la fattura del dentista</div>
+        </div>
+        <div class="pbrow m">
+          <div class="psender">Mac di Luca</div>
+          <div class="pbm">Trovato 1 file:</div>
+          <div class="pfcard">
+            <div class="pfprev">
+              <div class="pflines">
+                <div class="pfl pflh" style="width:50%"></div>
+                <div class="pfl" style="width:100%"></div>
+                <div class="pfl" style="width:80%"></div>
+                <div class="pfl" style="width:65%"></div>
+                <div class="pfl" style="width:45%"></div>
+              </div>
+              <div class="pfbadge">PDF</div>
+            </div>
+            <div class="pfbody">
+              <div class="pfname">Fattura_Dentista_Mar2025.pdf</div>
+              <div class="pfmeta"><span>Documents</span><span>·</span><span>84 KB</span><span>·</span><span>12 mar</span></div>
+            </div>
+            <div class="pfactions">
+              <div class="pgrab">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5v7M3 6.5l3.5 3.5 3.5-3.5" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><line x1="1.5" y1="12" x2="11.5" y2="12" stroke="white" stroke-width="1.7" stroke-linecap="round"/></svg>
+                Grab
+              </div>
+              <div class="peye">👁</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pibar">
+        <div class="pipill">Cerca o chiedi…</div>
+        <div class="psbtn">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 12L12 7L2 2V6L9 7L2 8V12Z" fill="white"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="come-funziona">
+  <div class="how-inner">
+    <span class="section-label reveal">Come funziona</span>
+    <h2 class="section-title reveal">Tre passi.<br/><strong>Zero cloud.</strong></h2>
+
+    <div class="steps">
+      <div class="step reveal">
+        <span class="step-num">01</span>
+        <div class="step-icon">💬</div>
+        <h3>Chiedi</h3>
+        <p>Scrivi in linguaggio naturale cosa cerchi — "la fattura del dentista di marzo" o "il contratto con Rossi". Nessuna sintassi, nessuna cartella da ricordare.</p>
+      </div>
+      <div class="step reveal" style="transition-delay:.1s">
+        <span class="step-num">02</span>
+        <div class="step-icon">🔍</div>
+        <h3>Il Mac trova</h3>
+        <p>GRAB usa AI on-device per capire cosa cerchi, poi interroga Spotlight, il testo dei file tramite OCR e i metadati — tutto sul tuo Mac, localmente.</p>
+      </div>
+      <div class="step reveal" style="transition-delay:.2s">
+        <span class="step-num">03</span>
+        <div class="step-icon">⬇</div>
+        <h3>Grab</h3>
+        <p>Tap su Grab. Il file arriva direttamente sul tuo iPhone in pochi secondi, cifrato end-to-end, via connessione diretta. Poi lo condividi con chi vuoi.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="features-inner">
+    <span class="section-label reveal">Features</span>
+    <h2 class="section-title reveal">Costruito per chi<br/><strong>non scende a compromessi.</strong></h2>
+
+    <div class="features-grid">
+      <div class="feat reveal">
+        <div class="feat-icon">🔒</div>
+        <div class="feat-t">
+          <h4>Cifrato end-to-end</h4>
+          <p>Curve25519 + AES-GCM. Il trasferimento avviene direttamente tra i tuoi dispositivi. Nessun server vede mai i tuoi file.</p>
+        </div>
+      </div>
+      <div class="feat reveal" style="transition-delay:.1s">
+        <div class="feat-icon">🧠</div>
+        <div class="feat-t">
+          <h4>AI completamente locale</h4>
+          <p>Il modello linguistico gira sul Neural Engine del tuo Mac. La comprensione della query avviene on-device, senza mandare nulla a server esterni.</p>
+        </div>
+      </div>
+      <div class="feat reveal" style="transition-delay:.05s">
+        <div class="feat-icon">⚡</div>
+        <div class="feat-t">
+          <h4>Velocità P2P</h4>
+          <p>Trasferimento diretto senza intermediari. Su Wi-Fi locale viaggia a velocità piena — nessun collo di bottiglia cloud.</p>
+        </div>
+      </div>
+      <div class="feat reveal" style="transition-delay:.15s">
+        <div class="feat-icon">🌐</div>
+        <div class="feat-t">
+          <h4>Connessione remota</h4>
+          <p>Anche fuori casa. GRAB v2 ti connette al Mac ovunque tu sia — stesso livello di sicurezza, stessa semplicità.</p>
+        </div>
+      </div>
+      <div class="feat reveal">
+        <div class="feat-icon">🔎</div>
+        <div class="feat-t">
+          <h4>Ricerca profonda</h4>
+          <p>Non solo nomi file. GRAB indicizza il contenuto tramite OCR, legge i metadati e interroga Spotlight per trovare anche il file che non ricordi dove hai messo.</p>
+        </div>
+      </div>
+      <div class="feat reveal" style="transition-delay:.1s">
+        <div class="feat-icon">🌍</div>
+        <div class="feat-t">
+          <h4>Multilingua</h4>
+          <p>Chiedi in italiano, inglese, o qualsiasi altra lingua. GRAB capisce la query indipendentemente dalla lingua con cui hai salvato i file.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH BADGES -->
+<div class="tech-row reveal">
+  <span class="tech-badge">Curve25519</span>
+  <span class="tech-badge">AES-GCM</span>
+  <span class="tech-badge">Apple Neural Engine</span>
+  <span class="tech-badge">Spotlight / NSMetadataQuery</span>
+  <span class="tech-badge">Vision OCR</span>
+  <span class="tech-badge">UDP P2P</span>
+  <span class="tech-badge">SwiftUI</span>
+  <span class="tech-badge">Zero cloud</span>
+</div>
+
+<!-- PRIVACY CALLOUT -->
+<section class="privacy" id="privacy">
+  <div class="privacy-inner reveal">
+    <span class="privacy-icon">🛡</span>
+    <h2>I tuoi file restano<br/><strong>tuoi.</strong></h2>
+    <p>Nessun server intermedio. Nessun upload su cloud. Nessun account da creare. GRAB è un canale diretto tra il tuo iPhone e il tuo Mac — e nient'altro.</p>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-inner reveal">
+    <h2>Pronto a<br/><strong>grabbare?</strong></h2>
+    <p>GRAB è in arrivo su App Store per iPhone e Mac.</p>
+    <div class="coming-soon">
+      <span class="coming-dot"></span>
+      Disponibile presto su App Store
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div>© 2025 GRAB — Tutti i diritti riservati</div>
+  <div style="display:flex;gap:24px;">
+    <a href="#">Privacy Policy</a>
+    <a href="#">Support</a>
+    <a href="https://github.com" target="_blank">GitHub</a>
+  </div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  reveals.forEach(el => observer.observe(el));
+
+  // Nav active state on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 100) current = s.getAttribute('id');
+    });
+    navLinks.forEach(a => {
+      a.style.color = a.getAttribute('href') === '#' + current
+        ? 'rgba(255,255,255,.9)' : '';
+    });
+  });
+</script>
+</body>
+</html>
